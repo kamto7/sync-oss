@@ -13,8 +13,5 @@ RUN npm install
 # 复制项目文件
 COPY . .
 
-# 创建下载目录
-RUN mkdir -p downloads
-
 # 运行应用
 CMD ["node", "index.js"]
