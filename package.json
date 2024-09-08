@@ -5,6 +5,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@alicloud/pop-core": "^1.7.13",
     "ali-oss": "^6.21.0",
     "axios": "^0.27.2",
     "dotenv": "^16.4.5",
