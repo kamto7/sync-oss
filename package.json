@@ -1,0 +1,13 @@
+{
+  "name": "sync-oss",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ali-oss": "^6.21.0",
+    "axios": "^0.27.2",
+    "dotenv": "^16.4.5",
+    "node-schedule": "^2.1.1"
+  }
+}
