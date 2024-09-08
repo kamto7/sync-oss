@@ -9,7 +9,7 @@ require("dotenv").config();
 
 const pipeline = promisify(stream.pipeline);
 
-// 配置阿里云 OSS 客户端
+// Configure Alibaba Cloud OSS client
 const ossClient = new OSS({
   region: process.env.OSS_REGION,
   accessKeyId: process.env.OSS_ACCESS_KEY_ID,
@@ -17,7 +17,7 @@ const ossClient = new OSS({
   bucket: process.env.OSS_BUCKET,
 });
 
-// 要下载的资源列表
+// List of resources to download
 const resources = [
   {
     url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
@@ -85,7 +85,7 @@ const resources = [
   },
 ];
 
-// 下载文件
+// Download file
 async function downloadFile(url, filename) {
   const response = await axios({
     method: "GET",
@@ -95,77 +95,77 @@ async function downloadFile(url, filename) {
 
   const filePath = path.join(__dirname, "downloads", filename);
 
-  // 确保目录存在
+  // Ensure directory exists
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
 
   const writer = fs.createWriteStream(filePath);
 
   try {
     await pipeline(response.data, writer);
-    console.log(`文件下载成功: ${filename}`);
+    console.log(`File downloaded successfully: ${filename}`);
   } catch (error) {
-    console.error(`下载文件失败: ${filename}`, error);
+    console.error(`Failed to download file: ${filename}`, error);
     throw error;
   } finally {
     writer.close();
   }
 
-  // 验证文件是否成功下载
+  // Verify if file was successfully downloaded
   if (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
-    throw new Error(`文件下载失败或为空: ${filename}`);
+    throw new Error(`File download failed or is empty: ${filename}`);
   }
 }
 
-// 上传文件到 OSS
+// Upload file to OSS
 async function uploadToOSS(filename) {
   try {
     const result = await ossClient.put(
       filename,
       path.join(__dirname, "downloads", filename)
     );
-    console.log(`上传成功: ${filename}`);
+    console.log(`Upload successful: ${filename}`);
     return result;
   } catch (error) {
-    console.error(`上传失败: ${filename}`, error);
+    console.error(`Upload failed: ${filename}`, error);
   }
 }
 
-// 主要任务
+// Main task
 async function main() {
-  console.log("开始下载和上传任务...");
+  console.log("Starting download and upload tasks...");
 
   for (const resource of resources) {
     try {
       await downloadFile(resource.url, resource.filename);
-      console.log(`下载成功: ${resource.filename}`);
+      console.log(`Download successful: ${resource.filename}`);
       await uploadToOSS(resource.filename);
-      // 上传完成后删除本地文件
+      // Delete local file after upload
       fs.unlinkSync(path.join(__dirname, "downloads", resource.filename));
     } catch (error) {
-      console.error(`处理 ${resource.filename} 时出错:`, error);
+      console.error(`Error processing ${resource.filename}:`, error);
     }
   }
 
-  console.log("任务完成");
+  console.log("Tasks completed");
 }
 
-// 项目启动时立即执行一次
-console.log("项目启动,立即执行一次任务...");
+// Execute once when project starts
+console.log("Project started, executing tasks immediately...");
 main()
   .then(() => {
-    console.log("初始任务执行完成");
+    console.log("Initial tasks completed");
 
-    // 设置定时任务,每天凌晨 2 点执行
+    // Set up scheduled task to run at 2 AM daily
     const job = schedule.scheduleJob("0 2 * * *", main);
-    console.log("定时任务已设置,等待执行...");
+    console.log("Scheduled task set, waiting for execution...");
 
-    // 优雅退出
+    // Graceful exit
     process.on("SIGTERM", () => {
-      console.log("收到 SIGTERM 信号，正在优雅退出...");
+      console.log("Received SIGTERM signal, gracefully exiting...");
       job.cancel();
       process.exit(0);
     });
   })
   .catch((err) => {
-    console.error("初始任务执行失败:", err);
+    console.error("Initial task execution failed:", err);
   });
